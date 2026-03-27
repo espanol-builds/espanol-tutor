@@ -449,6 +449,85 @@
     .card { padding: 20px; }
     .speaking-card { padding: 20px; }
   }
+
+  /* Personality card overlay */
+  .personality-overlay {
+    position: fixed; inset: 0;
+    background: rgba(45,41,38,0.65);
+    backdrop-filter: blur(8px);
+    z-index: 2000; display: flex;
+    align-items: center; justify-content: center;
+    padding: 20px; animation: fadeIn 0.3s ease;
+  }
+  .personality-card {
+    width: 100%; max-width: 400px;
+    border-radius: 28px; overflow: hidden;
+    box-shadow: 0 40px 100px rgba(45,41,38,0.4);
+    animation: cardPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes cardPop {
+    from { transform: scale(0.75) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .personality-card-bg {
+    padding: 44px 32px 28px; position: relative;
+    min-height: 460px; display: flex; flex-direction: column;
+    align-items: center; text-align: center; overflow: hidden;
+  }
+  .personality-deco {
+    position: absolute; font-size: 160px; opacity: 0.06;
+    top: -20px; right: -20px; line-height: 1;
+    pointer-events: none; user-select: none;
+  }
+  .personality-deco2 {
+    position: absolute; font-size: 100px; opacity: 0.05;
+    bottom: 40px; left: -15px; line-height: 1;
+    pointer-events: none; user-select: none;
+  }
+  .personality-tag {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    opacity: 0.55; margin-bottom: 20px; font-family: 'DM Sans', sans-serif;
+  }
+  .personality-emoji {
+    font-size: 60px; margin-bottom: 14px; display: block;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.15));
+    animation: emojiFloat 3s ease-in-out infinite;
+  }
+  @keyframes emojiFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .personality-type {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; font-weight: 400; line-height: 1.25; margin-bottom: 12px;
+  }
+  .personality-desc {
+    font-size: 14px; line-height: 1.7; opacity: 0.75;
+    font-family: 'DM Sans', sans-serif; margin-bottom: 22px; max-width: 290px;
+  }
+  .personality-stats { display: flex; gap: 12px; margin-bottom: 24px; width: 100%; }
+  .personality-stat {
+    text-align: center; flex: 1; padding: 10px 8px;
+    border-radius: 14px; background: rgba(255,255,255,0.2);
+  }
+  .pstat-num { font-family: 'Playfair Display', serif; font-size: 22px; display: block; }
+  .pstat-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.65; margin-top: 2px; display: block; }
+  .personality-branding {
+    font-family: 'Playfair Display', serif; font-style: italic;
+    font-size: 14px; opacity: 0.4; margin-top: auto;
+    padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.15); width: 100%;
+  }
+  .personality-actions { display: flex; gap: 10px; padding: 16px 20px 20px; background: white; }
+  .personality-actions button {
+    flex: 1; padding: 14px 10px; border-radius: 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; border: none;
+  }
+  .btn-snap { background: var(--charcoal); color: white; }
+  .btn-snap:hover { background: #1a1714; transform: translateY(-1px); }
+  .btn-keep-going { background: var(--warm-white); color: var(--terracotta); }
+  .btn-keep-going:hover { background: var(--blush); color: white; }
+
 </style>
 </head>
 <body>
@@ -829,7 +908,13 @@ function checkAnswer(i) {
   if (ok) { correctCount++; streak++; if (streak>bestStreak) bestStreak=streak; bump('correctCount'); }
   else streak = 0;
   bump('streakCount');
+  recordTopicResult(currentTopic, ok);
   saveStats(); updateDisplay();
+
+  // Show personality card every 10 questions
+  if (totalCount > 0 && totalCount % 10 === 0) {
+    setTimeout(() => showPersonalityCard(), 1200);
+  }
 
   for (let j=0;j<4;j++) {
     const b = document.getElementById('opt-'+j);
@@ -1082,6 +1167,133 @@ function showVocab(cat) {
 updateDisplay();
 loadQuestion();
 showVocab('time');
+
+// ── Personality card ──────────────────────────────────────
+// Track per-topic results for the personality verdict
+let topicResults = {};
+
+function recordTopicResult(topic, correct) {
+  if (!topicResults[topic]) topicResults[topic] = { correct: 0, total: 0 };
+  topicResults[topic].total++;
+  if (correct) topicResults[topic].correct++;
+}
+
+async function showPersonalityCard() {
+  // Build topic performance summary
+  const summary = Object.entries(topicResults).map(([topic, r]) => {
+    const pct = Math.round((r.correct / r.total) * 100);
+    return topic + ': ' + pct + '% (' + r.correct + '/' + r.total + ')';
+  }).join(', ');
+
+  const topTopic = Object.entries(topicResults).sort((a,b) => {
+    const pctA = a[1].correct / a[1].total;
+    const pctB = b[1].correct / b[1].total;
+    return pctB - pctA;
+  })[0];
+
+  const topicLabel = {
+    time: 'Time Expressions', food: 'Food & Drink', health: 'Health & Body',
+    transport: 'Travel & Transport', personal: 'Family & Friends', school: 'School & Work'
+  };
+
+  const prompt = `You are creating a fun, shareable "Spanish personality type" result card for a Year 9 student who just completed a Spanish IGCSE quiz.
+
+Their stats: ${correctCount} correct out of ${totalCount} total. Topic performance: ${summary || 'general mix'}.
+
+Generate a fun, specific, Instagram-worthy Spanish personality type for them. Think like BuzzFeed quiz meets aesthetic teen content.
+
+Rules:
+- The type name should be a fun 3-5 word Spanish-themed title (e.g. "The Barcelona Beach Babe", "The Madrid Morning Person", "The Tapas Tour Guide")
+- Make it flattering and fun, never negative
+- Reference their actual strong topic if possible
+- The description should be 2 sentences max, witty, warm, teen-appropriate
+- Pick ONE emoji that perfectly represents the vibe
+- Pick a gradient: choose two hex colours that look beautiful together (warm, aesthetic, NOT purple)
+
+Respond ONLY in valid JSON:
+{
+  "type": "The [fun title]",
+  "emoji": "single emoji",
+  "description": "2 sentence witty description referencing their performance",
+  "gradient": ["#hexcolor1", "#hexcolor2"],
+  "textColor": "#hexcolor (light or dark depending on gradient)"
+}`;
+
+  // Show loading overlay
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="personality-overlay" id="personalityOverlay">
+      <div style="text-align:center;color:white">
+        <div style="font-size:40px;margin-bottom:16px;animation:emojiFloat 1s ease-in-out infinite">✨</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-style:italic">Discovering your Spanish personality...</div>
+      </div>
+    </div>`);
+
+  try {
+    const text = await callClaude(prompt);
+    const p = JSON.parse(text);
+    renderPersonalityCard(p);
+  } catch(e) {
+    document.getElementById('personalityOverlay').remove();
+  }
+}
+
+function renderPersonalityCard(p) {
+  const overlay = document.getElementById('personalityOverlay');
+  const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+  const topTopic = Object.entries(topicResults).sort((a,b) => (b[1].correct/b[1].total) - (a[1].correct/a[1].total))[0];
+  const topicLabel = { time:'Time', food:'Food', health:'Health', transport:'Transport', personal:'Family', school:'School' };
+  const strongTopic = topTopic ? topicLabel[topTopic[0]] : 'Spanish';
+
+  overlay.innerHTML = `
+    <div class="personality-card" id="personalityCardInner">
+      <div class="personality-card-bg" style="background: linear-gradient(145deg, ${p.gradient[0]}, ${p.gradient[1]}); color: ${p.textColor}">
+        <div class="personality-deco">${p.emoji}</div>
+        <div class="personality-deco2">🌸</div>
+        <div class="personality-tag">your spanish personality</div>
+        <span class="personality-emoji">${p.emoji}</span>
+        <div class="personality-type">${p.type}</div>
+        <div class="personality-desc">${p.description}</div>
+        <div class="personality-stats">
+          <div class="personality-stat">
+            <span class="pstat-num">${correctCount}</span>
+            <span class="pstat-label">correct</span>
+          </div>
+          <div class="personality-stat">
+            <span class="pstat-num">${accuracy}%</span>
+            <span class="pstat-label">accuracy</span>
+          </div>
+          <div class="personality-stat">
+            <span class="pstat-num">${bestStreak}</span>
+            <span class="pstat-label">best streak</span>
+          </div>
+        </div>
+        <div class="personality-branding">española</div>
+      </div>
+      <div class="personality-actions">
+        <button class="btn-snap" onclick="shareHint()">📸 Screenshot to share</button>
+        <button class="btn-keep-going" onclick="closePersonality()">Keep going →</button>
+      </div>
+    </div>`;
+}
+
+function shareHint() {
+  // Show a tip since we can't auto-screenshot
+  const btn = document.querySelector('.btn-snap');
+  btn.textContent = '📱 Press home + power to screenshot!';
+  btn.style.fontSize = '11px';
+  setTimeout(() => { btn.textContent = '📸 Screenshot to share'; btn.style.fontSize = '13px'; }, 3000);
+}
+
+function closePersonality() {
+  const overlay = document.getElementById('personalityOverlay');
+  if (overlay) {
+    overlay.style.animation = 'none';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.3s';
+    setTimeout(() => overlay.remove(), 300);
+  }
+}
+
 </script>
 </body>
 </html>
