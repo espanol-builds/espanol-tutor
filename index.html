@@ -987,9 +987,17 @@ function renderSpeakingCard() {
         <div><div class="speaking-card-type">Task ${taskNum} of ${total}</div><div style="font-size:13px;font-weight:500">${card.title}</div></div>
       </div>
       <div class="speaking-card-title">${card.what}</div>
-      <div style="padding:12px 16px;background:rgba(242,196,176,0.2);border-radius:8px;margin-bottom:16px;font-size:14px;color:var(--mid);border-left:3px solid var(--blush)">💡 ${card.hint}</div>
-      <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--light-mid);margin-bottom:10px">Tap to hear:</p>
-      <div class="speaking-phrase-grid">${phrases}</div>`;
+      <div style="margin-bottom:16px">
+        <button id="revealBtn" onclick="revealAnswer()"
+          style="background:transparent;border:1.5px solid var(--terracotta);color:var(--terracotta);padding:10px 20px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:100%">
+          ✨ I've tried — show hints &amp; phrases
+        </button>
+        <div id="modelAnswer" style="display:none">
+          <div style="padding:12px 16px;background:rgba(242,196,176,0.2);border-radius:8px;margin-bottom:12px;font-size:14px;color:var(--mid);border-left:3px solid var(--blush)">💡 ${card.hint}</div>
+          <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--light-mid);margin-bottom:10px">Tap to hear:</p>
+          <div class="speaking-phrase-grid">${phrases}</div>
+        </div>
+      </div>`;
   } else {
     const vocab = (card.vocab||[]).map(v=>`
       <div class="speaking-phrase" onclick="speakWord('${v.es.replace(/'/g,"\\'")}')">
@@ -1005,15 +1013,17 @@ function renderSpeakingCard() {
       <p style="font-size:12px;color:var(--light-mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Examiner asks:</p>
       <div class="speaking-card-title" style="cursor:pointer" onclick="speakWord('${card.examiner.replace(/'/g,"\\'")} ')">${card.examiner} 🔊</div>
       <div style="margin-bottom:16px">
-        <button id="revealBtn" onclick="revealAnswer()" 
+        <button id="revealBtn" onclick="revealAnswer()"
           style="background:transparent;border:1.5px solid var(--terracotta);color:var(--terracotta);padding:10px 20px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:100%">
           ✨ I've tried — show model answer
         </button>
-        <div id="modelAnswer" style="display:none;padding:14px 16px;background:rgba(168,184,154,0.15);border-radius:8px;font-size:14px;color:var(--mid);font-style:italic;line-height:1.6;border-left:3px solid var(--sage)"></div>
-      </div>
-      ${card.tips&&card.tips.length?`<ul class="speaking-bullets">${card.tips.map(t=>`<li>💡 ${t}</li>`).join('')}</ul>`:''}
-      <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--light-mid);margin-bottom:10px">Key vocab:</p>
-      <div class="speaking-phrase-grid">${vocab}</div>`;
+        <div id="modelAnswer" style="display:none">
+          <div style="padding:14px 16px;background:rgba(168,184,154,0.15);border-radius:8px;margin-bottom:12px;font-size:14px;color:var(--mid);font-style:italic;line-height:1.6;border-left:3px solid var(--sage)"></div>
+          ${card.tips&&card.tips.length?`<ul class="speaking-bullets">${card.tips.map(t=>`<li>💡 ${t}</li>`).join('')}</ul>`:''}
+          <p style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--light-mid);margin-bottom:10px">Key vocab:</p>
+          <div class="speaking-phrase-grid">${vocab}</div>
+        </div>
+      </div>`;
   }
 
   document.getElementById('speakingOutput').innerHTML = `
